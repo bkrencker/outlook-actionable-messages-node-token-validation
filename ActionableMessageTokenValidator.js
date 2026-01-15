@@ -38,16 +38,16 @@ var oid = require('./OpenIdMetadata');
 var jwt = require('jsonwebtoken');
 
 const O365_APP_ID = "48af08dc-f6d2-435f-b2a7-069abd99c086";
-const O365_OPENID_METADATA_URL = "https://substrate.office.com/sts/common/.well-known/openid-configuration";
-const O365_TOKEN_ISSUER = "https://substrate.office.com/sts/";
+const O365_OPENID_METADATA_URL = "https://login.microsoftonline.com/<Entra-Tenant-ID>/.well-known/openid-configuration";
+const O365_TOKEN_ISSUER = "https://sts.windows.net/<Entra-Tenant-ID>/";
 
 /**
  * Result from token validation.
  */
 var ActionableMessageTokenValidationResult = (function() {
     function ActionableMessageTokenValidationResult() {
-        this.sender = "";
         this.actionPerformer = "";
+        this.scope = "";
     }
     
     return ActionableMessageTokenValidationResult;
@@ -78,7 +78,7 @@ var ActionableMessageTokenValidator = (function () {
         var decoded = jwt.decode(token, { complete: true });
         var verifyOptions = {
             issuer: O365_TOKEN_ISSUER,
-            audience: targetUrl
+            audience: decoded.payload.aud
         };
         
         var openIdMetadata = new oid.OpenIdMetadata(O365_OPENID_METADATA_URL)
@@ -95,8 +95,8 @@ var ActionableMessageTokenValidator = (function () {
                         Error.captureStackTrace(error);
                         cb(error);
                     } else {
-                        result.sender = decoded.payload.sender;
-                        result.actionPerformer = decoded.payload.sub;
+                        result.scope = decoded.payload.scp;
+                        result.actionPerformer = decoded.payload.upn;
                     }
                 } catch (err) {
                     cb(err);
